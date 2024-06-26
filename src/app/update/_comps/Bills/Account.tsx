@@ -2,112 +2,104 @@ import React, { useContext } from "react";
 import type { FormProps } from "antd";
 import { Button, Form, Input, DatePicker, List } from "antd";
 import AmountFormItem from "../Amount";
-import { Currencies } from "../../const";
-import { Context, getTodayDate, getUUID, handleDate } from "../../tools";
+import {
+	Context,
+	getTodayDate,
+	getTypeLabel,
+	getUUID,
+	handleDate,
+} from "../../tools";
+import { AccountTypes } from "../../const";
 
-type DataKeys = "alipay" | "wechat" | "mainlandBank" | "hkBank";
 export type AccountFieldType = {
-  id: string;
-  date: string;
-  comment?: string;
-} & Record<
-  DataKeys,
-  {
-    currency: string;
-    amount?: string;
-  }
->;
-type AccountDBType = DBType<AccountFieldType, DataKeys>;
+	id: string;
+	date: string;
+	comment?: string;
+	item: {
+		currency: string;
+		amount: string;
+	};
+};
+type AccountDBType = DBType<AccountFieldType, "item">;
 
 export default function Account() {
-  const [form] = Form.useForm();
-  const { context, setContext } = useContext(Context);
+	const [form] = Form.useForm();
+	const { context, setContext } = useContext(Context);
 
-  const onFinish: FormProps<AccountFieldType>["onFinish"] = (value) => {
-    setContext({
-      ...context,
-      AccountBill: [
-        ...(context.AccountBill ?? []),
-        Object.assign(value, { id: getUUID() }),
-      ],
-    });
-    form.resetFields();
-  };
+	const onFinish: FormProps<AccountFieldType>["onFinish"] = (value) => {
+		console.info("value: ", value);
+		setContext({
+			...context,
+			AccountBill: [
+				...(context.AccountBill ?? []),
+				Object.assign(value, {
+					id: getUUID(),
+					item: Object.assign(value.item, {
+						amount: parseFloat(value.item.amount),
+					}),
+				}),
+			],
+		});
+		form.resetFields();
+	};
 
-  return (
-    <Form
-      form={form}
-      initialValues={{
-        date: getTodayDate(),
-        ...Object.fromEntries(
-          ["alipay", "wechat", "mainlandBank"].map((key) => [
-            [key],
-            {
-              currency: Currencies[0].value,
-              amount: 0,
-            },
-          ]),
-        ),
-        ...Object.fromEntries(
-          ["hkBank"].map((key) => [
-            [key],
-            {
-              currency: Currencies[1].value,
-              amount: 0,
-            },
-          ]),
-        ),
-      }}
-      labelCol={{ span: 4 }}
-      onFinish={onFinish}
-    >
-      <Form.Item<AccountFieldType>
-        label="日期"
-        name="date"
-        rules={[{ required: true }]}
-      >
-        <DatePicker className="!w-[34%]" placeholder="" />
-      </Form.Item>
+	return (
+		<Form
+			form={form}
+			initialValues={{
+				date: getTodayDate(),
+				item: {
+					currency: AccountTypes[0].value,
+					amount: 0,
+				},
+			}}
+			labelCol={{ span: 4 }}
+			onFinish={onFinish}
+		>
+			<Form.Item<AccountFieldType>
+				label="日期"
+				name="date"
+				rules={[{ required: true }]}
+			>
+				<DatePicker className="!w-[34%]" placeholder="" />
+			</Form.Item>
 
-      <AmountFormItem namePrefix="alipay" label="支付宝" />
+			<AmountFormItem
+				namePrefix="item"
+				label="项目"
+				setOptions={AccountTypes}
+			/>
 
-      <AmountFormItem namePrefix="wechat" label="微信" />
+			<Form.Item<AccountFieldType> label="备注" name="comment">
+				<Input.TextArea placeholder="请填写备注" />
+			</Form.Item>
 
-      <AmountFormItem namePrefix="mainlandBank" label="大陆银行" />
-
-      <AmountFormItem namePrefix="hkBank" label="香港银行" />
-
-      <Form.Item<AccountFieldType> label="备注" name="comment">
-        <Input.TextArea placeholder="请填写备注" />
-      </Form.Item>
-
-      <Form.Item className="flex justify-end !mb-0">
-        <Button type="primary" htmlType="submit">
-          确认
-        </Button>
-      </Form.Item>
-    </Form>
-  );
+			<Form.Item className="flex justify-end !mb-0">
+				<Button type="primary" htmlType="submit">
+					确认
+				</Button>
+			</Form.Item>
+		</Form>
+	);
 }
 
 export const AccountId = "AccountBill" as const;
 export const AccountRender = (value: AccountDBType) => {
-  const ds = [value.alipay, value.wechat, value.mainlandBank, value.hkBank]
-    .filter((item) => (item.amount ?? "").length > 0)
-    .map((item) => `${item.currency}-${item.amount}`)
-    .join(" / ");
-  return (
-    <List.Item.Meta
-      title={`${value.date.format("YYYY-MM-DD")}${ds.length ? ` / ${ds}` : ""}`}
-      description={value.comment}
-    />
-  );
+	return (
+		<List.Item.Meta
+			title={`${value.date.format("YYYY-MM-DD")} / ${getTypeLabel(
+				AccountTypes,
+				value.item.currency
+			)}-${value.item.amount}`}
+			description={value.comment}
+		/>
+	);
 };
 export const AccountHandlers = {
-  async POST(value: AccountFieldType[]) {
-    fetch("/api/bill/account", {
-      method: "POST",
-      body: JSON.stringify(handleDate(value)),
-    });
-  },
+	async POST(value: AccountFieldType[]) {
+		fetch("/api/bill/account", {
+			method: "POST",
+			body: JSON.stringify(handleDate(value)),
+		});
+	},
 };

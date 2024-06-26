@@ -51,7 +51,9 @@ export default function Income() {
 				Object.assign(value, {
 					id: getUUID(),
 					type: Array.isArray(value.type) ? value.type : [value.type],
-					...(value.measurable ? {} : { currency: "", amount: "" }),
+					...(value.measurable && value.amount
+						? { amount: parseFloat(value.amount) }
+						: { currency: "", amount: "" }),
 				}),
 			],
 		});

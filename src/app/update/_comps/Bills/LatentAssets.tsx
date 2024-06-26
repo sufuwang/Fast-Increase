@@ -76,7 +76,11 @@ export default function LatentAssets() {
 				<Cascader className="!w-[30%]" options={Properties} />
 			</Form.Item>
 
-			<AmountFormItem pureCurrency={false} />
+			<AmountFormItem
+				setOptions={(options) =>
+					options.filter((c) => !["StockCount"].includes(c.value))
+				}
+			/>
 
 			<Form.Item<LatentAssetsFieldType> label="备注" name="comment">
 				<Input.TextArea placeholder="请填写备注" />

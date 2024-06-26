@@ -51,7 +51,7 @@ export default function ActionBar() {
 	};
 
 	return (
-		<Space className="flex justify-end p-2 m-6 fixed right-0 bottom-0 bg-white">
+		<Space className="flex justify-end p-2 m-6 fixed left-0 bottom-0 bg-white">
 			{showUpdateAssets ? (
 				<Button onClick={() => router.push("/update/assets")}>更新资产</Button>
 			) : (

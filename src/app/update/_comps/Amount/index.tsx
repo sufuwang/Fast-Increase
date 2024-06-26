@@ -7,7 +7,9 @@ interface Props {
 	label?: string;
 	disabled?: boolean;
 	namePrefix?: string;
-	pureCurrency?: boolean;
+	setOptions?:
+		| ((options: typeof Currencies) => typeof Currencies)
+		| typeof Currencies;
 }
 
 const getName = (name: string, namePrefix?: string) => {
@@ -18,7 +20,7 @@ export default function Amount({
 	label,
 	disabled,
 	namePrefix,
-	pureCurrency = true,
+	setOptions = Currencies,
 }: Props) {
 	return (
 		<Form.Item
@@ -29,8 +31,10 @@ export default function Amount({
 			<Space.Compact className="!w-[60%]">
 				<Form.Item name={getName("currency", namePrefix)} noStyle>
 					<Select disabled={disabled} className="!w-[50%]">
-						{(pureCurrency
-							? Currencies.filter((c) => !["StockCount"].includes(c.value))
+						{(Array.isArray(setOptions)
+							? setOptions
+							: typeof setOptions === "function"
+							? setOptions(Currencies)
 							: Currencies
 						).map((currency) => (
 							<Option key={currency.value} value={currency.value}>
@@ -40,7 +44,7 @@ export default function Amount({
 					</Select>
 				</Form.Item>
 				<Form.Item name={getName("amount", namePrefix)} noStyle>
-					<InputNumber disabled={disabled} className="!w-[50%]" />
+					<InputNumber min={0} disabled={disabled} className="!w-[50%]" />
 				</Form.Item>
 			</Space.Compact>
 		</Form.Item>

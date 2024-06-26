@@ -55,6 +55,13 @@ export const Properties: DefaultOptionType[] = [
 	},
 ];
 
+export const AccountTypes = [
+	{ value: "alipay", label: "支付宝" },
+	{ value: "wechat", label: "微信" },
+	{ value: "rmb", label: "人民币" },
+	{ value: "hk-dollar", label: "港币" },
+];
+
 export const IncomeTypes = [
 	{ value: "wage", label: "工资" },
 	{ value: "partTime", label: "兼职" },

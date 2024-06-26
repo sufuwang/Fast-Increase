@@ -1,12 +1,23 @@
 import type { IncomeFieldType } from "@/app/update/_comps/Bills";
 import mysql from "@/db/mysql";
-import { Filter, insert, read } from "@/db/mysql/sql";
+import { insert, read } from "@/db/mysql/sql";
+import { helper } from "@/db/mysql/filter";
 import { NextRequest } from "next/server";
 
 export const GET = async (r: NextRequest) => {
 	const params = r.nextUrl.searchParams;
 	const year = params.get("year");
-	const [data] = await mysql.query(read("income", year && Filter.year(year)));
+	const month = params.get("month");
+	const [data] = await mysql.query(
+		read(
+			"income",
+			year
+				? month
+					? helper({ month: [parseInt(year), parseInt(month)] })
+					: helper({ year })
+				: null
+		)
+	);
 	return Response.json(data);
 };
 

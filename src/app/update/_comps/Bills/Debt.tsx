@@ -25,7 +25,10 @@ export default function Debt() {
 			...context,
 			DebtBill: [
 				...(context.DebtBill ?? []),
-				Object.assign(value, { id: getUUID() }),
+				Object.assign(value, {
+					id: getUUID(),
+					amount: parseFloat(value.amount),
+				}),
 			],
 		});
 		form.resetFields();

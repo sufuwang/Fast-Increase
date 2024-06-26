@@ -14,6 +14,7 @@ import {
 	OutcomeFieldType,
 	OutcomeId,
 } from "./_comps/Bills";
+import { AccountTypes, IncomeTypes, OutcomeTypes, Properties } from "./const";
 
 type Item<T> = Array<T & { id: string }>;
 interface BillsContextItem {
@@ -51,11 +52,26 @@ export const getUUID = () => {
 	});
 };
 
+export const getTypeLabelWithoutOptions = (
+	values: string | string[],
+	mark?: string
+) => {
+	return (
+		getTypeLabel(IncomeTypes, values, mark) ||
+		getTypeLabel(OutcomeTypes, values, mark) ||
+		getTypeLabel(Properties, values, mark) ||
+		getTypeLabel(AccountTypes, values, mark)
+	);
+};
 export const getTypeLabel = (
 	options: DefaultOptionType[],
-	values: string[],
+	values: string | string[],
+	mark: string = "-",
 	str = ""
 ): string => {
+	if (!Array.isArray(values)) {
+		values = [values];
+	}
 	if (options.length === 0) {
 		return str;
 	}
@@ -67,7 +83,8 @@ export const getTypeLabel = (
 	return getTypeLabel(
 		item.children ?? [],
 		restValues,
-		str ? `${str}-${item.label}` : `${item.label}`
+		mark,
+		str ? `${str}${mark}${item.label}` : `${item.label}`
 	);
 };
 

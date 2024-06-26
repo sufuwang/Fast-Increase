@@ -1,101 +1,126 @@
 "use client";
-import React from "react";
-import { DownOutlined } from "@ant-design/icons";
+import React, { useEffect, useState } from "react";
 import type { TableColumnsType } from "antd";
-import { Badge, Dropdown, Space, Table } from "antd";
+import { Table } from "antd";
+import ExpendedTable from "./_comps/ExpendedTable";
+import type { TableFields } from "@/db/mysql/sql";
+import { getLatentAssetString } from "./update/_comps/Bills/LatentAssets";
 
-interface DataType {
-	key: React.Key;
-	name: string;
-	platform: string;
-	version: string;
-	upgradeNum: number;
-	creator: string;
-	createdAt: string;
-}
-
-interface ExpandedDataType {
+export interface DataType {
 	key: React.Key;
 	date: string;
-	name: string;
-	upgradeNum: string;
+	income: string;
+	outcome: string;
+	balance: string;
+	balanceChange: string;
+	debt: string;
+	debtChange: string;
 }
 
-const items = [
-	{ key: "1", label: "Action 1" },
-	{ key: "2", label: "Action 2" },
+const columns: TableColumnsType<DataType> = [
+	{ title: "时间", dataIndex: "date", key: "date" },
+	{ title: "收入总额", dataIndex: "income", key: "income" },
+	{ title: "支出总额", dataIndex: "outcome", key: "outcome" },
+	{ title: "账户余额", dataIndex: "balance", key: "balance" },
+	{
+		title: "账户新增总额(较上月)",
+		dataIndex: "balanceChange",
+		key: "balanceChange",
+	},
+	{ title: "债务剩余", dataIndex: "debt", key: "debt" },
+	{
+		title: "债务新增总额(较上月)",
+		key: "debtChange",
+		dataIndex: "debtChange",
+	},
 ];
+const Urls = [
+	{ url: "/api/bill/income", label: "收入" },
+	{ url: "/api/bill/outcome", label: "支出" },
+	{ url: "/api/bill/account", label: "账户" },
+	{ url: "/api/bill/debt", label: "债务" },
+] as const;
+
+export type DataItem =
+	| {
+			label: "收入";
+			data: Record<TableFields<"income">, string>[];
+	  }
+	| {
+			label: "支出";
+			data: Record<TableFields<"outcome">, string>[];
+	  }
+	| {
+			label: "账户";
+			data: Record<TableFields<"account">, string>[];
+	  }
+	| {
+			label: "债务";
+			data: Record<TableFields<"debt">, string>[];
+	  };
+
+const dataSource: DataType[] = [];
+for (let i = 0; i < 3; ++i) {
+	const key = i.toString();
+	dataSource.push({
+		key,
+		date: "2024-0" + `${4 + i}`,
+		income: key,
+		outcome: key,
+		balance: key,
+		balanceChange: key,
+		debt: key,
+		debtChange: key,
+	});
+}
 
 const App: React.FC = () => {
-	const expandedRowRender = () => {
-		const columns: TableColumnsType<ExpandedDataType> = [
-			{ title: "Date", dataIndex: "date", key: "date" },
-			{ title: "Name", dataIndex: "name", key: "name" },
-			{
-				title: "Status",
-				key: "state",
-				render: () => <Badge status="success" text="Finished" />,
-			},
-			{ title: "Upgrade Status", dataIndex: "upgradeNum", key: "upgradeNum" },
-			{
-				title: "Action",
-				key: "operation",
-				render: () => (
-					<Space size="middle">
-						<a>Pause</a>
-						<a>Stop</a>
-						<Dropdown menu={{ items }}>
-							<a>
-								More <DownOutlined />
-							</a>
-						</Dropdown>
-					</Space>
-				),
-			},
-		];
+	const [data, setData] = useState<Record<string, DataItem[]>>({});
 
-		const data = [];
-		for (let i = 0; i < 3; ++i) {
-			data.push({
-				key: i.toString(),
-				date: "2014-12-24 23:12:00" + ` ${i}`,
-				name: "This is production name",
-				upgradeNum: "Upgraded: 56",
-			});
-		}
-		return <Table columns={columns} dataSource={data} pagination={false} />;
+	const getData = async () => {
+		const uu = (
+			(await (await fetch("/api/latentAssets")).json()) as Array<any>
+		).flat(Infinity);
+
+		const d = (
+			await Promise.all(
+				(
+					await Promise.all(Urls.map(({ url }) => fetch(`${url}?year=2024`)))
+				).map((item) => item.json())
+			)
+		)
+			.filter((data) => data.length > 0)
+			.map((data) =>
+				data.map((row: any) => {
+					const tar = uu.find((r) => r.uuid === row.originUUID);
+					if (tar) {
+						row.originDesc = getLatentAssetString(tar);
+					}
+					return row;
+				})
+			)
+			.map((data, index) => ({ data, label: Urls[index].label }));
+
+		setData(
+			Object.assign(data, {
+				2024: d,
+			})
+		);
 	};
 
-	const columns: TableColumnsType<DataType> = [
-		{ title: "Name", dataIndex: "name", key: "name" },
-		{ title: "Platform", dataIndex: "platform", key: "platform" },
-		{ title: "Version", dataIndex: "version", key: "version" },
-		{ title: "Upgraded", dataIndex: "upgradeNum", key: "upgradeNum" },
-		{ title: "Creator", dataIndex: "creator", key: "creator" },
-		{ title: "Date", dataIndex: "createdAt", key: "createdAt" },
-		{ title: "Action", key: "operation", render: () => <a>Publish</a> },
-	];
-
-	const data: DataType[] = [];
-	for (let i = 0; i < 3; ++i) {
-		data.push({
-			key: i.toString(),
-			name: "Screen",
-			platform: "iOS",
-			version: "10.3.4.5654",
-			upgradeNum: 500,
-			creator: "Jack",
-			createdAt: "2014-12-24 23:12:00",
-		});
-	}
+	useEffect(() => {
+		getData();
+	}, []);
 
 	return (
 		<>
 			<Table
-				columns={columns}
-				expandable={{ expandedRowRender, defaultExpandedRowKeys: ["0"] }}
-				dataSource={data}
 				size="middle"
+				columns={columns}
+				expandable={{
+					expandedRowRender: (props) => ExpendedTable(props, data[2024]),
+				}}
+				dataSource={dataSource}
 			/>
 		</>
 	);

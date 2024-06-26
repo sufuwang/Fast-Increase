@@ -1,12 +1,26 @@
 import type { AccountFieldType } from "@/app/update/_comps/Bills";
 import mysql from "@/db/mysql";
-import { insert, read, Filter } from "@/db/mysql/sql";
+import { insert, read } from "@/db/mysql/sql";
+import { helper } from "@/db/mysql/filter";
 import { NextRequest } from "next/server";
 
 export const GET = async (r: NextRequest) => {
 	const params = r.nextUrl.searchParams;
 	const year = params.get("year");
-	const [data] = await mysql.query(read("account", year && Filter.year(year)));
+	const month = params.get("month");
+
+	const [data] = await mysql.query(
+		read(
+			"account",
+			year
+				? month
+					? helper({
+							month: [parseInt(year), parseInt(month)],
+					  })
+					: helper({ year })
+				: null
+		)
+	);
 	return Response.json(data);
 };
 
@@ -20,14 +34,8 @@ export const POST = async (request: Request) => {
 				insert("account", {
 					uuid: item.id,
 					date: item.date,
-					alipay_currency: item.alipay.currency,
-					alipay_amount: item.alipay.amount ?? "",
-					wechat_currency: item.wechat.currency,
-					wechat_amount: item.wechat.amount ?? "",
-					mainland_bank_currency: item.mainlandBank.currency,
-					mainland_bank_amount: item.mainlandBank.amount ?? "",
-					hk_bank_currency: item.hkBank.currency,
-					hk_bank_amount: item.hkBank.amount ?? "",
+					currency: item.item.currency,
+					amount: item.item.amount ?? "",
 					comment: item.comment ?? "",
 				})
 			);

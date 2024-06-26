@@ -36,6 +36,7 @@ export default function Outcome() {
 				Object.assign(value, {
 					id: getUUID(),
 					type: Array.isArray(value.type) ? value.type : [value.type],
+					amount: parseFloat(value.amount),
 				}),
 			],
 		});
