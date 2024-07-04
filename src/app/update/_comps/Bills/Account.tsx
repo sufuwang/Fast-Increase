@@ -27,7 +27,6 @@ export default function Account() {
 	const { context, setContext } = useContext(Context);
 
 	const onFinish: FormProps<AccountFieldType>["onFinish"] = (value) => {
-		console.info("value: ", value);
 		setContext({
 			...context,
 			AccountBill: [

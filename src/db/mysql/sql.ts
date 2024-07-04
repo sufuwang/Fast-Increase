@@ -63,6 +63,7 @@ const Config = {
 } as const;
 
 type TableName = keyof typeof Config;
+export const TableNames = Object.keys(Config);
 export type TableFields<T extends TableName> =
 	(typeof Config)[T]["fields"][number]["name"];
 type TableFieldsWithoutId<T extends TableName> = Exclude<TableFields<T>, "id">;
